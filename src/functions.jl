@@ -95,7 +95,7 @@ function png_write_info(png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     ccall((:png_write_info, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
 end
 
-function png_destroy_read_struct(png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+function png_destroy_write_struct(png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     png_ptr_ptr = Ref{Ptr{Void}}(png_ptr)
     info_ptr_ptr = Ref{Ptr{Void}}(info_ptr)
     ccall((:png_destroy_write_struct, :libpng), Void, (Ref{Ptr{Void}}, Ref{Ptr{Void}}), png_ptr_ptr, info_ptr_ptr)

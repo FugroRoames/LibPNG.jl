@@ -10,7 +10,7 @@ else
     error("LibPNG not properly installed. Please run Pkg.build(\"LibPNG\") then restart Julia.")
 end
 
-include("libpng.jl")
+include("functions.jl")
 include("io.jl")
 
 end # module

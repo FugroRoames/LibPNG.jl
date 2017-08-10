@@ -63,7 +63,7 @@ function writeimage(filename::String, image::AbstractArray)
 
     ccall((:png_write_end, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
 
-    png_destroy_read_struct(png_ptr, info_ptr)
+    png_destroy_write_struct(png_ptr, info_ptr)
 
     close_png(fp)
 
