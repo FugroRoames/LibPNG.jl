@@ -1,6 +1,7 @@
 module LibPNG
 
-export readimage, writeimage
+export readimage,
+       writeimage
 
 const depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
 if isfile(depsfile)
@@ -10,5 +11,6 @@ else
 end
 
 include("libpng.jl")
+include("io.jl")
 
 end # module

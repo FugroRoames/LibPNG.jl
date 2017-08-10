@@ -1,7 +1,5 @@
 const PNG_BYTES_TO_CHECK = 8
 
-const PNG_LIBPNG_VER_STRING = "1.2.50"
-
 function png_error_handler(::Ptr{Void}, msg::String)
     error("Png error: $msg")
 end
@@ -12,7 +10,24 @@ end
 const png_error_fn = cfunction(png_error_handler, Void, (Ptr{Void}, Cstring))
 const png_warn_fn = cfunction(png_warn_handler, Void, (Ptr{Void}, Cstring))
 
-function readimage(filename::String)
+# Returns the libpng version string
+function get_libpng_version()
+    ver = ccall((:png_access_version_number, :libpng), Cuint, ())
+    # Version in the format of xxyyzz, where x=major, yy=minor, z=release
+    # But on the major version the first x is excluded if 0.
+    dig = digits(ver)[end:-1:1]
+    length(dig) == 5 ? prepend!(dig, 0) : error("Unknown libpng version: $ver")
+
+    @inbounds major = dig[1] == 0 ? string(dig[2]) : string(dig[1], dig[2])
+    @inbounds minor = dig[3] == 0 ? string(dig[4]) : string(dig[3], dig[4])
+    @inbounds release = dig[5] == 0 ? string(dig[6]) : string(dig[5], dig[6])
+
+    ver_string = "$major.$minor.$release"
+end
+
+const PNG_LIBPNG_VER_STRING = get_libpng_version()
+
+function open_png(filename::String)
     fp = ccall((:fopen, "libc"), Ptr{Void}, (Cstring, Cstring), filename, "rb")
     fp == C_NULL && error("Failed to open $filename")
 
@@ -23,86 +38,65 @@ function readimage(filename::String)
     is_png = ccall((:png_sig_cmp, "libpng"), Cint, (Ptr{UInt8}, Csize_t, Csize_t), header, 0, PNG_BYTES_TO_CHECK)
     is_png != 0 && error("File $filename is not a png file")
 
+    return fp
+end
+
+function create_read_struct()
     png_ptr = ccall((:png_create_read_struct, "libpng"), Ptr{Void}, (Cstring, Ptr{Void}, Ptr{Void}, Ptr{Void}),
                     PNG_LIBPNG_VER_STRING, C_NULL, png_error_fn, png_warn_fn)
     png_ptr == C_NULL && error("Failed to create png read struct")
+    return png_ptr
+end
 
+function create_info_struct(png_ptr)
     info_ptr = ccall((:png_create_info_struct, "libpng"), Ptr{Void}, (Ptr{Void},), png_ptr)
     info_ptr == C_NULL && error("Failed to create png info struct")
+    return info_ptr
+end
 
+function png_init_io(png_ptr::Ptr{Void}, fp::Ptr{Void})
     ccall((:png_init_io, "libpng"), Void, (Ptr{Void}, Ptr{Void}), png_ptr, fp)
+end
 
+function png_set_sig_bytes(png_ptr::Ptr{Void})
     ccall((:png_set_sig_bytes, "libpng"), Void, (Ptr{Void}, Cint), png_ptr, PNG_BYTES_TO_CHECK)
+end
 
-    transforms = 0
-    # (PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_PACKING | PNG_TRANSFORM_STRIP_ALPHA | PNG_TRANSFORM_GRAY_TO_RGB)
+function png_read_png(png_ptr::Ptr{Void}, info_ptr::Ptr{Void}, transforms::Int)
     ccall((:png_read_png, "libpng"), Void, (Ptr{Void}, Ptr{Void}, Cint, Ptr{Void}), png_ptr, info_ptr, transforms, C_NULL)
+end
 
-    width = ccall((:png_get_image_width, "libpng"), UInt32, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-    height = ccall((:png_get_image_height, "libpng"), UInt32, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-    num_channels = ccall((:png_get_channels, "libpng"), UInt8, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-
-    rows = ccall((:png_get_rows, "libpng"), Ptr{Ptr{UInt8}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-
-    image = zeros(UInt8, height, width, num_channels)
-    for i = 1:height
-        row = unsafe_load(rows, i)
-        for j = 1:width
-            for c = 1:num_channels
-                image[i, j, c] = unsafe_load(row, num_channels * (j - 1) + c)
-            end
-        end
-    end
-
+function png_destroy_read_struct(png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     png_ptr_ptr = Ref{Ptr{Void}}(png_ptr)
     info_ptr_ptr = Ref{Ptr{Void}}(info_ptr)
     ccall((:png_destroy_read_struct, "libpng"), Void, (Ref{Ptr{Void}}, Ref{Ptr{Void}}, Ptr{Ptr{Void}}), png_ptr_ptr, info_ptr_ptr, C_NULL)
-    ccall((:fclose, "libc"), Cint, (Ptr{Void},), fp)
-
-    return image
 end
 
-function writeimage(filename::String, image::AbstractArray)
-    fp = ccall((:fopen, "libc"), Ptr{Void}, (Cstring, Cstring), filename, "wb")
-    fp == C_NULL && error("Could not open $(filename) for writing")
+function close_png(fp::Ptr{Void})
+    ccall((:fclose, "libc"), Cint, (Ptr{Void},), fp)
+end
 
+# Write functions
+
+function png_create_write_struct(png_error_fn::Ptr{Void}, png_warn_fn::Ptr{Void})
     png_ptr = ccall((:png_create_write_struct, :libpng), Ptr{Void}, (Cstring, Ptr{Void}, Ptr{Void}, Ptr{Void}),
                     PNG_LIBPNG_VER_STRING, C_NULL, png_error_fn, png_warn_fn)
     png_ptr == C_NULL && error("Failed to create png write struct")
+    return png_ptr
+end
 
+function png_create_info_struct(png_ptr::Ptr{Void})
     info_ptr = ccall((:png_create_info_struct, :libpng), Ptr{Void}, (Ptr{Void},), png_ptr)
     info_ptr == C_NULL && error("Failed to create png info struct")
+    return info_ptr
+end
 
-    ccall((:png_init_io, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, fp)
-
-    height = size(image, 1)
-    width = size(image, 2)
-    bit_depth = 8
-    PNG_COLOR_TYPE_RGB = 2
-    PNG_INTERLACE_NONE = 0
-    PNG_COMPRESSION_TYPE_BASE = 0
-    PNG_FILTER_TYPE_BASE = 0
-
-    ccall((:png_set_IHDR, :libpng), Void,
-          (Ptr{Void}, Ptr{Void}, Cuint, Cuint, Cint, Cint, Cint, Cint, Cint),
-          png_ptr, info_ptr, width, height, bit_depth, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
-          PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE)
-
+function png_write_info(png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     ccall((:png_write_info, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+end
 
-    row_buf = Array{UInt8}(size(image, 3), size(image,  2))
-    for row = 1:size(image, 1)
-        row_buf[:] = image[row, :, :].'
-        ccall((:png_write_row, :libpng), Void, (Ptr{Void}, Ptr{UInt8}), png_ptr, row_buf)
-    end
-
-    ccall((:png_write_end, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-
+function png_destroy_read_struct(png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     png_ptr_ptr = Ref{Ptr{Void}}(png_ptr)
     info_ptr_ptr = Ref{Ptr{Void}}(info_ptr)
     ccall((:png_destroy_write_struct, :libpng), Void, (Ref{Ptr{Void}}, Ref{Ptr{Void}}), png_ptr_ptr, info_ptr_ptr)
-
-    ccall((:fclose, "libc"), Cint, (Ptr{Void},), fp)
-
-    return nothing
 end
