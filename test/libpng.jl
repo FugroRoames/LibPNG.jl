@@ -3,17 +3,35 @@
     mkdir(tmp_dir)
     try
         srand(123)
-        orig_image = rand(UInt8, 1000, 2000, 3)
         test_file1 = joinpath(tmp_dir, "test1.png")
+        rgb_image = rand(RGB{Float64}, 500, 2000)
+
+        r = RGB(1.0,0.0,0.0)
+        g = RGB(0.0,1.0,0.0)
+        b = RGB(0.0,0.0,1.0)
+        rgb_image1 = vcat(fill(r, 50,100), fill(g, 50,100), fill(b, 50,100))
+        writeimage(test_file1, rgb_image1, 8, Colors.RGB, 0, 0, 0)
+        img_in1 = readimage(test_file1)
+
         test_file2 = joinpath(tmp_dir, "test2.png")
-        writeimage(test_file1, orig_image)
+        r = zeros(UInt8, 50, 100, 3)
+        r[:,:,1] = 255
+        r[:,:,2] = 0
+        r[:,:,3] = 0
+        g = zeros(UInt8, 50, 100, 3)
+        g[:,:,1] = 0
+        g[:,:,2] = 255
+        g[:,:,3] = 0
+        b = zeros(UInt8, 50, 100, 3)
+        b[:,:,1] = 0
+        b[:,:,2] = 0
+        b[:,:,3] = 255
 
-        image_in = readimage(test_file1)
-        @test orig_image == image_in
+        rgb_image2 = vcat(r,g,b)
+        writeimage(test_file2, rgb_image2, 8, Colors.RGB, 0, 0, 0)
+        img_in2 = readimage(test_file2)
 
-        writeimage(test_file2, image_in)
-        image_out = readimage(test_file2)
-        @test image_out == image_in
+        @test img_in1 == img_in2
     finally
         rm(tmp_dir; force = true, recursive = true)
     end

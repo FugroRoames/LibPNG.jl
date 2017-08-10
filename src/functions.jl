@@ -1,10 +1,10 @@
 const PNG_BYTES_TO_CHECK = 8
 
-function png_error_handler(::Ptr{Void}, msg::String)
+function png_error_handler(::Ptr{Void}, msg::Cstring)
     error("Png error: $msg")
 end
 
-function png_warn_handler(::Ptr{Void}, msg::String)
+function png_warn_handler(::Ptr{Void}, msg::Cstring)
     warn("Png warn: $msg")
 end
 const png_error_fn = cfunction(png_error_handler, Void, (Ptr{Void}, Cstring))
