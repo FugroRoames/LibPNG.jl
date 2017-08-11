@@ -1,6 +1,8 @@
 module LibPNG
 
-using Colors, ImageCore
+using Colors,
+      ImageCore,
+      FixedPointNumbers
 
 export readimage,
        writeimage

@@ -1,3 +1,9 @@
+function jetmap(x)
+    RGB{N0f8}(clamp(min.(4x - 1.5, -4x + 4.5), 0.0, 1.0),
+              clamp(min.(4x - 0.5, -4x + 3.5), 0.0, 1.0),
+              clamp(min.(4x + 0.5, -4x + 2.5), 0.0, 1.0))
+end
+
 @testset "Read / Write" begin
     tmp_dir = tempname()
     mkdir(tmp_dir)
@@ -30,8 +36,14 @@
         rgb_image2 = vcat(r,g,b)
         writeimage(test_file2, rgb_image2, 8, Colors.RGB, 0, 0, 0)
         img_in2 = readimage(test_file2)
-
         @test img_in1 == img_in2
+
+        test_file3 = joinpath(tmp_dir, "test3.png")
+        img_in3 = [i for i = linspace(0,1, 100), j = linspace(0,1, 100)]
+        colors = jetmap.(img_in3)
+        writeimage(test_file3, colors)
+        img3 = readimage(test_file3)
+
     finally
         rm(tmp_dir; force = true, recursive = true)
     end

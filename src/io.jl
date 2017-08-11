@@ -33,7 +33,16 @@ function readimage(filename::String, transforms::Int = 0)
 end
 
 # Colors RGB
-function write_rows{T<:RGB}(image::AbstractArray{T}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+function write_rows{T<:FixedPoint}(image::AbstractArray{RGB{T}}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+    channel_view = reinterpret(UInt8, image)
+    for row = 1:size(image, 1)
+        row_buf = channel_view[:, row, :]
+        ccall((:png_write_row, :libpng), Void, (Ptr{Void}, Ptr{UInt8}), png_ptr, row_buf)
+    end
+    ccall((:png_write_end, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+end
+
+function write_rows{T<:Number}(image::AbstractArray{RGB{T}}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     channel_view = channelview(image)
     for row = 1:size(image, 1)
         row_buf = round.(UInt8, channel_view[:, row, :])*UInt8(255)
