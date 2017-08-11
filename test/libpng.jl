@@ -43,6 +43,16 @@ end
         colors = jetmap.(img_in3)
         writeimage(test_file3, colors)
         img3 = readimage(test_file3)
+        writeimage(joinpath(tmp_dir, "test4.png"), img3)
+
+        # Get it in the same shape
+        a = reinterpret(UInt8, colors)
+        b = Array{UInt8, 3}(100, 100, 3)
+        b[:, :, 1] = a[1, :, :]
+        b[:, :, 2] = a[2, :, :]
+        b[:, :, 3] = a[3, :, :]
+
+        @test b == img3
 
     finally
         rm(tmp_dir; force = true, recursive = true)
