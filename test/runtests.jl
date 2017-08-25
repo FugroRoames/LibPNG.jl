@@ -8,5 +8,5 @@ include("images.jl")
 
 tmpdir = joinpath(tempdir(), "LibPNG")
 try
-    # rm(tmpdir, recursive = true)
+    rm(tmpdir, recursive = true)
 end
