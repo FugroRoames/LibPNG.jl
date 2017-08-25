@@ -1,12 +1,12 @@
+__precompile__()
+
 module LibPNG
 
 using Colors,
       ImageCore,
       FixedPointNumbers
 
-export readimage,
-       writeimage
-
+export readimage, writeimage
 
 const depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
 if isfile(depsfile)

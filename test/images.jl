@@ -1,5 +1,3 @@
-
-
 @testset "IO" begin
     tmpdir = joinpath(tempdir(), "LibPNG")
     isdir(tmpdir) && rm(tmpdir, recursive = true)
@@ -10,7 +8,7 @@
     @test_throws ErrorException writeimage(fn, img)
 
     @testset "Binary Image" begin
-        a = rand(Bool, 10, 10)
+        a = rand(Bool, 11, 10)
         fn = joinpath(tmpdir, "binary1.png")
         writeimage(fn, a)
         b1 = readimage(fn)
@@ -44,7 +42,7 @@
     end
 
     @testset "Color - RGB" begin
-        rgb8 = rand(RGB{N0f8}, 5, 5)
+        rgb8 = rand(RGB{N0f8}, 10, 5)
         fn = joinpath(tmpdir, "rgb_n0f8.png")
         writeimage(fn, rgb8)
         r1 = readimage(fn)

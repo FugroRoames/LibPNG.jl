@@ -55,7 +55,7 @@ function readimage(filename::String, transforms::Int = 0)
 
     colors_type = map_color(color_type, T)
 
-    buf = Array{colors_type}(width, height)
+    buf = Array{colors_type}(height, width)
 
     get_image_pixels!(rawview(channelview(buf)), png_ptr, info_ptr)
 
@@ -67,30 +67,33 @@ function readimage(filename::String, transforms::Int = 0)
 end
 
 function get_image_pixels!{T<:Unsigned}(buf::AbstractArray{T, 2}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
-    width, height = size(buf)
+    height, width = size(buf)
     rows = ccall((:png_get_rows, "libpng"), Ptr{Ptr{T}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
     for i = 1:height
         row = unsafe_load(rows, i)
         for j = 1:width
-            buf[j, i] = unsafe_load(row, j)
+            buf[i, j] = unsafe_load(row, j)
         end
     end
     buf
 end
 
-function get_image_pixels!{T<:Unsigned, N}(buf::AbstractArray{T, N}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
-    (N == 3) | (N == 4) || error("Image has invalid dimension $N")
-    num_channels, width, height = size(buf)
+function get_image_pixels!{T<:Unsigned}(buf::AbstractArray{T, 3}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+    num_channels, height, width = size(buf)
     rows = ccall((:png_get_rows, "libpng"), Ptr{Ptr{T}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
     for i = 1:height
         row = unsafe_load(rows, i)
         for j = 1:width
             for c = 1:num_channels
-                buf[c, j, i] = unsafe_load(row, num_channels * (j - 1) + c)
+                buf[c, i, j] = unsafe_load(row, num_channels * (j - 1) + c)
             end
         end
     end
     buf
+end
+
+function get_image_pixels!{T, N}(buf::AbstractArray{T, N}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+    error("Image array has invalid dimension $N")
 end
 
 to_raw{C<:Colorant}(A::Array{C})  = to_raw(channelview(A))
@@ -123,16 +126,11 @@ map_image(x::Bool) = convert(Gray{N0f8}, x)
 map_image(x::AbstractFloat) = convert(N0f8, x)
 map_image(x::Normed) = x
 
-function get_image_size{T, N}(buffer::AbstractArray{T,N})
-    ndims = N
-    if ndims == 2
-        width, height = size(buffer)
-    elseif ndims == 3 || ndims == 4
-        n_channels, width, height = size(buffer)
-    else
-        error("Number of dimensions in image of $ndims not supported.")
-    end
-    width, height
+get_image_size{T}(buffer::AbstractArray{T,2}) = size(buffer)
+get_image_size{T,N}(buffer::AbstractArray{T,N}) = error("Number of dimensions in image of $ndims not supported.")
+function get_image_size{T}(buffer::AbstractArray{T,3})
+    n_channels, height, width = size(buffer)
+    height, width
 end
 
 function writeimage{T}(filename::String, image::AbstractArray{T})
@@ -148,8 +146,7 @@ function writeimage{T}(filename::String, image::AbstractArray{T})
 
     buffer = to_raw(image)
 
-    width, height = get_image_size(buffer)
-
+    height, width = get_image_size(buffer)
     bit_depth = get_bit_depth(image)
 
     color_type = get_color_type(eltype(image))
@@ -175,21 +172,24 @@ end
 
 # 2 dim matrix
 function write_rows{T}(buf::AbstractArray{T, 2}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
-    width, height = get_image_size(buf)
+    height, width = get_image_size(buf)
     for row = 1:height
-        row_buf = buf[:, row]
-        ccall((:png_write_row, :libpng), Void, (Ptr{Void}, Ptr{UInt8}), png_ptr, row_buf)
+        row_buf = buf[row, :]
+        ccall((:png_write_row, :libpng), Void, (Ptr{Void}, Ptr{T}), png_ptr, row_buf)
     end
     ccall((:png_write_end, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
 end
 
 # N dim matrix
-function write_rows{T, N}(buf::AbstractArray{T, N}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
-    N != 3 && error("Image has invalid dimension $N")
-    width, height = get_image_size(buf)
+function write_rows{T}(buf::AbstractArray{T, 3}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+    height, width = get_image_size(buf)
     for row = 1:height
-        row_buf = buf[:, :, row]
-        ccall((:png_write_row, :libpng), Void, (Ptr{Void}, Ptr{UInt8}), png_ptr, row_buf)
+        row_buf = buf[:, row, :]
+        ccall((:png_write_row, :libpng), Void, (Ptr{Void}, Ptr{T}), png_ptr, row_buf)
     end
     ccall((:png_write_end, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+end
+
+function write_rows{T, N}(buf::AbstractArray{T, N}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+    error("Image has invalid dimension $N")
 end
