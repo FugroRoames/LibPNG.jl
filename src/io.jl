@@ -26,11 +26,11 @@ function readimage(filename::String, transforms::Int = 0)
 
     png_read_png(png_ptr, info_ptr, transforms)
 
-    width = ccall((:png_get_image_width, "libpng"), UInt32, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-    height = ccall((:png_get_image_height, "libpng"), UInt32, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-    color_type = ccall((:png_get_color_type, "libpng"), UInt32, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-    bit_depth = ccall((:png_get_bit_depth, "libpng"), UInt32, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
-    num_channels = ccall((:png_get_channels, "libpng"), UInt8, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    width = png_get_image_width(png_ptr, info_ptr)
+    height = png_get_image_height(png_ptr, info_ptr)
+    color_type = png_get_color_type(png_ptr, info_ptr)
+    bit_depth = png_get_bit_depth(png_ptr, info_ptr)
+    num_channels = png_get_channels(png_ptr, info_ptr)
 
     even_depth = ((bit_depth + 1) >> 1) << 1
     if bit_depth <= 8
@@ -57,7 +57,7 @@ end
 
 function get_image_pixels!{T<:Unsigned}(buf::AbstractArray{T, 2}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     height, width = size(buf)
-    rows = ccall((:png_get_rows, "libpng"), Ptr{Ptr{T}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
     for i = 1:height
         row = unsafe_load(rows, i)
         for j = 1:width
@@ -69,7 +69,7 @@ end
 
 function get_image_pixels!{T<:Unsigned}(buf::AbstractArray{T, 3}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     num_channels, height, width = size(buf)
-    rows = ccall((:png_get_rows, "libpng"), Ptr{Ptr{T}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
     for i = 1:height
         row = unsafe_load(rows, i)
         for j = 1:width
@@ -131,7 +131,7 @@ function writeimage{T}(filename::String, image::AbstractArray{T})
     info_ptr = png_create_info_struct(png_ptr)
     png_init_io(png_ptr, fp)
 
-    image = map(x->map_image(x), image)
+    image = map(map_image, image)
 
     buffer = to_raw(image)
 
@@ -143,7 +143,7 @@ function writeimage{T}(filename::String, image::AbstractArray{T})
     compression_type = 0 # Set to always off
     filter_type = 0      # Set to always off
 
-    ccall((:png_set_IHDR, :libpng), Void,
+    ccall((:png_set_IHDR, libpng), Void,
           (Ptr{Void}, Ptr{Void}, Cuint, Cuint, Cint, Cint, Cint, Cint, Cint),
           png_ptr, info_ptr, width, height, bit_depth, color_type, interlace,
           compression_type, filter_type)
@@ -164,19 +164,19 @@ function write_rows{T}(buf::AbstractArray{T, 2}, png_ptr::Ptr{Void}, info_ptr::P
     height, width = get_image_size(buf)
     for row = 1:height
         row_buf = buf[row, :]
-        ccall((:png_write_row, :libpng), Void, (Ptr{Void}, Ptr{T}), png_ptr, row_buf)
+        ccall((:png_write_row, libpng), Void, (Ptr{Void}, Ptr{T}), png_ptr, row_buf)
     end
-    ccall((:png_write_end, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    ccall((:png_write_end, libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
 end
 
-# N dim matrix
+# 3-dim matrix
 function write_rows{T}(buf::AbstractArray{T, 3}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
     height, width = get_image_size(buf)
     for row = 1:height
         row_buf = buf[:, row, :]
-        ccall((:png_write_row, :libpng), Void, (Ptr{Void}, Ptr{T}), png_ptr, row_buf)
+        ccall((:png_write_row, libpng), Void, (Ptr{Void}, Ptr{T}), png_ptr, row_buf)
     end
-    ccall((:png_write_end, :libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    ccall((:png_write_end, libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
 end
 
 function write_rows{T, N}(buf::AbstractArray{T, N}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})

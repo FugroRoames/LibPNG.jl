@@ -2,7 +2,7 @@ __precompile__()
 
 module LibPNG
 
-using Colors,
+using ColorTypes,
       ImageCore,
       FixedPointNumbers
 
@@ -17,5 +17,5 @@ end
 
 include("functions.jl")
 include("io.jl")
-#
+
 end # module

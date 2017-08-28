@@ -1,6 +1,6 @@
 using Base.Test
 using LibPNG
-using Colors
+using ColorTypes
 using FixedPointNumbers
 using ImageCore
 
