@@ -1,7 +1,12 @@
-using LibPNG
 using Base.Test
-
-using Colors
+using LibPNG
+using ColorTypes
 using FixedPointNumbers
+using ImageCore
 
-include("libpng.jl")
+include("images.jl")
+
+tmpdir = joinpath(tempdir(), "LibPNG")
+try
+    rm(tmpdir, recursive = true)
+end

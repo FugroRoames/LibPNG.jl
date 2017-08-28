@@ -1,12 +1,12 @@
+__precompile__()
+
 module LibPNG
 
-using Colors,
+using ColorTypes,
       ImageCore,
       FixedPointNumbers
 
-export readimage,
-       writeimage
-
+export readimage, writeimage
 
 const depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
 if isfile(depsfile)
@@ -15,8 +15,7 @@ else
     error("LibPNG not properly installed. Please run Pkg.build(\"LibPNG\") then restart Julia.")
 end
 
-include("types.jl")
 include("functions.jl")
 include("io.jl")
-#
+
 end # module
