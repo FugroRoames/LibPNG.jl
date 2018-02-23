@@ -32,6 +32,17 @@ function readimage(filename::String, transforms::Int = 0)
     bit_depth = png_get_bit_depth(png_ptr, info_ptr)
     num_channels = png_get_channels(png_ptr, info_ptr)
 
+    if (color_type == PNG_COLOR_TYPE_PALETTE)
+        error("The color type PNG_COLOR_TYPE_PALETTE is not currently supported.")
+    end
+
+    @debug "Read image info:
+            width=$width,
+            height=$height,
+            color_type=$color_type,
+            bit_depth=$bit_depth,
+            num_channels=$num_channels"
+
     even_depth = ((bit_depth + 1) >> 1) << 1
     if bit_depth <= 8
         T = Normed{UInt8, 8}
@@ -142,6 +153,15 @@ function writeimage{T}(filename::String, image::AbstractArray{T})
     interlace = 0        # Set to always off
     compression_type = 0 # Set to always off
     filter_type = 0      # Set to always off
+
+    @debug "Write image info:
+            width=$width,
+            height=$height,
+            bit_depth=$bit_depth,
+            color_type=$color_type,
+            interlace=$interlace,
+            compression_type=$compression_type,
+            filter_type=$filter_type"
 
     ccall((:png_set_IHDR, libpng), Void,
           (Ptr{Void}, Ptr{Void}, Cuint, Cuint, Cint, Cint, Cint, Cint, Cint),
