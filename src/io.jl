@@ -96,10 +96,12 @@ function get_image_pixels!(buf::AbstractArray{T, N}, png_ptr::Ptr{Nothing}, info
     error("Image array has invalid dimension $N")
 end
 
-to_raw(A::Array{C}) where C<:Colorant  = to_raw(channelview(A))
-to_raw(A::Array{T}) where T<:Normed    = rawview(A)
-to_raw(A::Array{T}) where T<:Real      = to_raw(convert(Array{N0f8}, A))
+to_raw(A::AbstractArray{C}) where C<:Colorant  = to_raw(channelview(A))
+to_raw(A::AbstractArray{T}) where T<:Normed    = rawview(A)
+to_raw(A::AbstractArray{T}) where T<:Real      = to_raw(convert(Array{N0f8}, A))
 to_raw(A::ColorView) = channelview(A)
+
+
 
 get_bit_depth(img::AbstractArray{C}) where C<:Colorant = _get_bit_depth(eltype(C))
 get_bit_depth(img::AbstractArray{T}) where T<:Normed = _get_bit_depth(T)
@@ -135,7 +137,7 @@ end
 
 function writeimage(filename::String, image::AbstractArray{T}) where T
 
-    fp = ccall((:fopen, "libc.so.6"), Ptr{Nothing}, (Cstring, Cstring), filename, "wb")
+    fp = ccall((:fopen, "/lib/x86_64-linux-gnu/libc.so"), Ptr{Nothing}, (Cstring, Cstring), filename, "wb")
     fp == C_NULL && error("Could not open $(filename) for writing")
 
     png_ptr = png_create_write_struct(png_error_fn, png_warn_fn)
@@ -143,7 +145,6 @@ function writeimage(filename::String, image::AbstractArray{T}) where T
     png_init_io(png_ptr, fp)
 
     image = map(map_image, image)
-
     buffer = to_raw(image)
 
     height, width = get_image_size(buffer)
