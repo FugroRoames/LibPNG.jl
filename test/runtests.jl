@@ -4,6 +4,7 @@ using ColorTypes
 using FixedPointNumbers
 using ImageCore
 using Logging
+using Random
 
 logger = ConsoleLogger(stdout, Logging.Debug)
 global_logger(logger)

@@ -55,7 +55,7 @@ function readimage(filename::String, transforms::Int = 0)
 
     colors_type = map_color(color_type, T)
 
-    buf = Array{colors_type}(height, width)
+    buf = Array{colors_type}(undef, height, width)
 
     get_image_pixels!(rawview(channelview(buf)), png_ptr, info_ptr)
 
