@@ -66,9 +66,9 @@ function readimage(filename::String, transforms::Int = 0)
     return buf
 end
 
-function get_image_pixels!(buf::AbstractArray{T, 2}, png_ptr::Ptr{Nothing}, info_ptr::Ptr{Nothing}) where T<:Unsigned
+function get_image_pixels!(buf::AbstractArray{T, 2}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where T<:Unsigned
     height, width = size(buf)
-    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Nothing}, Ptr{Nothing}), png_ptr, info_ptr)
+    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
     for i = 1:height
         row = unsafe_load(rows, i)
         for j = 1:width
@@ -78,9 +78,9 @@ function get_image_pixels!(buf::AbstractArray{T, 2}, png_ptr::Ptr{Nothing}, info
     buf
 end
 
-function get_image_pixels!(buf::AbstractArray{T, 3}, png_ptr::Ptr{Nothing}, info_ptr::Ptr{Nothing}) where T<:Unsigned
+function get_image_pixels!(buf::AbstractArray{T, 3}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where T<:Unsigned
     num_channels, height, width = size(buf)
-    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Nothing}, Ptr{Nothing}), png_ptr, info_ptr)
+    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
     for i = 1:height
         row = unsafe_load(rows, i)
         for j = 1:width
@@ -92,7 +92,7 @@ function get_image_pixels!(buf::AbstractArray{T, 3}, png_ptr::Ptr{Nothing}, info
     buf
 end
 
-function get_image_pixels!(buf::AbstractArray{T, N}, png_ptr::Ptr{Nothing}, info_ptr::Ptr{Nothing}) where {T, N}
+function get_image_pixels!(buf::AbstractArray{T, N}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where {T, N}
     error("Image array has invalid dimension $N")
 end
 
@@ -137,7 +137,7 @@ end
 
 function writeimage(filename::String, image::AbstractArray{T}) where T
 
-    fp = ccall(:fopen, Ptr{Nothing}, (Cstring, Cstring), filename, "wb")
+    fp = ccall(:fopen, Ptr{Cvoid}, (Cstring, Cstring), filename, "wb")
     fp == C_NULL && error("Could not open $(filename) for writing")
 
     png_ptr = png_create_write_struct(png_error_fn, png_warn_fn)
@@ -165,7 +165,7 @@ function writeimage(filename::String, image::AbstractArray{T}) where T
             filter_type=$filter_type"
 
     ccall((:png_set_IHDR, libpng), Nothing,
-          (Ptr{Nothing}, Ptr{Nothing}, Cuint, Cuint, Cint, Cint, Cint, Cint, Cint),
+          (Ptr{Cvoid}, Ptr{Cvoid}, Cuint, Cuint, Cint, Cint, Cint, Cint, Cint),
           png_ptr, info_ptr, width, height, bit_depth, color_type, interlace,
           compression_type, filter_type)
 
@@ -181,25 +181,25 @@ function writeimage(filename::String, image::AbstractArray{T}) where T
 end
 
 # 2 dim matrix
-function write_rows(buf::AbstractArray{T, 2}, png_ptr::Ptr{Nothing}, info_ptr::Ptr{Nothing}) where T
+function write_rows(buf::AbstractArray{T, 2}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where T
     height, width = get_image_size(buf)
     for row = 1:height
         row_buf = buf[row, :]
-        ccall((:png_write_row, libpng), Nothing, (Ptr{Nothing}, Ptr{T}), png_ptr, row_buf)
+        ccall((:png_write_row, libpng), Nothing, (Ptr{Cvoid}, Ptr{T}), png_ptr, row_buf)
     end
-    ccall((:png_write_end, libpng), Nothing, (Ptr{Nothing}, Ptr{Nothing}), png_ptr, info_ptr)
+    ccall((:png_write_end, libpng), Nothing, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
 end
 
 # 3-dim matrix
-function write_rows(buf::AbstractArray{T, 3}, png_ptr::Ptr{Nothing}, info_ptr::Ptr{Nothing}) where T
+function write_rows(buf::AbstractArray{T, 3}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where T
     height, width = get_image_size(buf)
     for row = 1:height
         row_buf = buf[:, row, :]
-        ccall((:png_write_row, libpng), Nothing, (Ptr{Nothing}, Ptr{T}), png_ptr, row_buf)
+        ccall((:png_write_row, libpng), Nothing, (Ptr{Cvoid}, Ptr{T}), png_ptr, row_buf)
     end
-    ccall((:png_write_end, libpng), Nothing, (Ptr{Nothing}, Ptr{Nothing}), png_ptr, info_ptr)
+    ccall((:png_write_end, libpng), Nothing, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
 end
 
-function write_rows(buf::AbstractArray{T, N}, png_ptr::Ptr{Nothing}, info_ptr::Ptr{Nothing}) where {T, N}
+function write_rows(buf::AbstractArray{T, N}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where {T, N}
     error("Image has invalid dimension $N")
 end
