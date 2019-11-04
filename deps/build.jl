@@ -1,3 +1,5 @@
+if VERSION < v"1.3"
+
 using BinaryProvider # requires BinaryProvider 0.3.0 or later
 using CMakeWrapper: cmake_executable
 
@@ -41,3 +43,5 @@ any(!satisfied(p; verbose=verbose) for p in products) && error("Unable to instal
 
 # Write out a deps.jl file that will contain mappings for our products
 write_deps_file(joinpath(@__DIR__, "deps.jl"), products, verbose=verbose)
+
+end
