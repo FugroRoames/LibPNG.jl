@@ -84,7 +84,7 @@ function png_destroy_read_struct(png_ptr::Ptr{Nothing}, info_ptr::Ptr{Nothing})
 end
 
 function close_png(fp::Ptr{Nothing})
-    ccall((:fclose, "/lib/x86_64-linux-gnu/libc.so.6"), Cint, (Ptr{Nothing},), fp)
+    ccall(:fclose, Cint, (Ptr{Nothing},), fp)
 end
 
 function png_get_image_width(png_ptr::Ptr{Nothing}, info_ptr::Ptr{Nothing})
