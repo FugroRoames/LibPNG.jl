@@ -137,7 +137,7 @@ end
 
 function writeimage(filename::String, image::AbstractArray{T}) where T
 
-    fp = ccall((:fopen, "/lib/x86_64-linux-gnu/libc.so.6"), Ptr{Nothing}, (Cstring, Cstring), filename, "wb")
+    fp = ccall(:fopen, Ptr{Nothing}, (Cstring, Cstring), filename, "wb")
     fp == C_NULL && error("Could not open $(filename) for writing")
 
     png_ptr = png_create_write_struct(png_error_fn, png_warn_fn)

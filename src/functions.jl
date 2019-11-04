@@ -39,11 +39,11 @@ end
 const PNG_LIBPNG_VER_STRING = get_libpng_version()
 
 function open_png(filename::String)
-    fp = ccall((:fopen, "/lib/x86_64-linux-gnu/libc.so.6"), Ptr{Nothing}, (Cstring, Cstring), filename, "rb")
+    fp = ccall(:fopen, Ptr{Nothing}, (Cstring, Cstring), filename, "rb")
     fp == C_NULL && error("Failed to open $filename")
 
     header = zeros(UInt8, PNG_BYTES_TO_CHECK)
-    header_size = ccall((:fread, "/lib/x86_64-linux-gnu/libc.so.6"), Csize_t, (Ptr{UInt8}, Cint, Cint, Ptr{Nothing}), header, 1, PNG_BYTES_TO_CHECK, fp)
+    header_size = ccall(:fread, Csize_t, (Ptr{UInt8}, Cint, Cint, Ptr{Nothing}), header, 1, PNG_BYTES_TO_CHECK, fp)
     header_size != 8 && error("Failed to read header from $filename")
 
     is_png = ccall((:png_sig_cmp, libpng), Cint, (Ptr{UInt8}, Csize_t, Csize_t), header, 0, PNG_BYTES_TO_CHECK)
