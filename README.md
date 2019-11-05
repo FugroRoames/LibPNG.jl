@@ -1,6 +1,7 @@
 # LibPNG
 
 [![Build Status](https://travis-ci.org/FugroRoames/LibPNG.jl.svg?branch=master)](https://travis-ci.org/FugroRoames/LibPNG.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/5xpjkivk4p98ekdj?svg=true)](https://ci.appveyor.com/project/msbahal/libpng-jl)
 [![Coverage Status](https://coveralls.io/repos/github/FugroRoames/LibPNG.jl/badge.svg?branch=master)](https://coveralls.io/github/FugroRoames/LibPNG.jl?branch=master)
 
 LibPNG bindings for reading and writing png files in Julia.
