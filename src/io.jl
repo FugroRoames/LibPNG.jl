@@ -164,7 +164,7 @@ function writeimage(filename::String, image::AbstractArray{T}) where T
             compression_type=$compression_type,
             filter_type=$filter_type"
 
-    ccall((:png_set_IHDR, libpng), Nothing,
+    ccall((:png_set_IHDR, libpng), Cvoid,
           (Ptr{Cvoid}, Ptr{Cvoid}, Cuint, Cuint, Cint, Cint, Cint, Cint, Cint),
           png_ptr, info_ptr, width, height, bit_depth, color_type, interlace,
           compression_type, filter_type)
@@ -185,9 +185,9 @@ function write_rows(buf::AbstractArray{T, 2}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr
     height, width = get_image_size(buf)
     for row = 1:height
         row_buf = buf[row, :]
-        ccall((:png_write_row, libpng), Nothing, (Ptr{Cvoid}, Ptr{T}), png_ptr, row_buf)
+        ccall((:png_write_row, libpng), Cvoid, (Ptr{Cvoid}, Ptr{T}), png_ptr, row_buf)
     end
-    ccall((:png_write_end, libpng), Nothing, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
+    ccall((:png_write_end, libpng), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
 end
 
 # 3-dim matrix
@@ -195,9 +195,9 @@ function write_rows(buf::AbstractArray{T, 3}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr
     height, width = get_image_size(buf)
     for row = 1:height
         row_buf = buf[:, row, :]
-        ccall((:png_write_row, libpng), Nothing, (Ptr{Cvoid}, Ptr{T}), png_ptr, row_buf)
+        ccall((:png_write_row, libpng), Cvoid, (Ptr{Cvoid}, Ptr{T}), png_ptr, row_buf)
     end
-    ccall((:png_write_end, libpng), Nothing, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
+    ccall((:png_write_end, libpng), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
 end
 
 function write_rows(buf::AbstractArray{T, N}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where {T, N}

@@ -4,8 +4,7 @@ module LibPNG
 
 using ColorTypes,
       ImageCore,
-      FixedPointNumbers,
-      MicroLogging
+      FixedPointNumbers
 
 export readimage, writeimage
 
