@@ -6,6 +6,8 @@
 
 LibPNG bindings for reading and writing png files in Julia.
 
+TODO - Windows build is broken!
+
 ## Installation
 
 ```julia

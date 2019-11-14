@@ -2,4 +2,6 @@
 *.jl.*.cov
 *.jl.mem
 deps/deps.jl
+deps/usr/
 Manifest.toml
+build.log

@@ -55,7 +55,7 @@ function readimage(filename::String, transforms::Int = 0)
 
     colors_type = map_color(color_type, T)
 
-    buf = Array{colors_type}(height, width)
+    buf = Array{colors_type}(undef, height, width)
 
     get_image_pixels!(rawview(channelview(buf)), png_ptr, info_ptr)
 
@@ -66,9 +66,9 @@ function readimage(filename::String, transforms::Int = 0)
     return buf
 end
 
-function get_image_pixels!{T<:Unsigned}(buf::AbstractArray{T, 2}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+function get_image_pixels!(buf::AbstractArray{T, 2}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where T<:Unsigned
     height, width = size(buf)
-    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
     for i = 1:height
         row = unsafe_load(rows, i)
         for j = 1:width
@@ -78,9 +78,9 @@ function get_image_pixels!{T<:Unsigned}(buf::AbstractArray{T, 2}, png_ptr::Ptr{V
     buf
 end
 
-function get_image_pixels!{T<:Unsigned}(buf::AbstractArray{T, 3}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+function get_image_pixels!(buf::AbstractArray{T, 3}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where T<:Unsigned
     num_channels, height, width = size(buf)
-    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    rows = ccall((:png_get_rows, libpng), Ptr{Ptr{T}}, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
     for i = 1:height
         row = unsafe_load(rows, i)
         for j = 1:width
@@ -92,50 +92,52 @@ function get_image_pixels!{T<:Unsigned}(buf::AbstractArray{T, 3}, png_ptr::Ptr{V
     buf
 end
 
-function get_image_pixels!{T, N}(buf::AbstractArray{T, N}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+function get_image_pixels!(buf::AbstractArray{T, N}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where {T, N}
     error("Image array has invalid dimension $N")
 end
 
-to_raw{C<:Colorant}(A::Array{C})  = to_raw(channelview(A))
-to_raw{T<:Normed}(A::Array{T})    = rawview(A)
-to_raw{T<:Real}(A::Array{T})      = to_raw(convert(Array{N0f8}, A))
+to_raw(A::AbstractArray{C}) where C<:Colorant  = to_raw(channelview(A))
+to_raw(A::AbstractArray{T}) where T<:Normed    = rawview(A)
+to_raw(A::AbstractArray{T}) where T<:Real      = to_raw(convert(Array{N0f8}, A))
 to_raw(A::ColorView) = channelview(A)
 
-get_bit_depth{C<:Colorant}(img::AbstractArray{C}) = _get_bit_depth(eltype(C))
-get_bit_depth{T<:Normed}(img::AbstractArray{T}) = _get_bit_depth(T)
-_get_bit_depth{T, N}(::Type{Normed{T, N}}) = N
-_get_bit_depth{T<:AbstractFloat}(img::Type{T}) = 8
+
+
+get_bit_depth(img::AbstractArray{C}) where C<:Colorant = _get_bit_depth(eltype(C))
+get_bit_depth(img::AbstractArray{T}) where T<:Normed = _get_bit_depth(T)
+_get_bit_depth(::Type{Normed{T, N}}) where {T, N} = N
+_get_bit_depth(img::Type{T}) where T<:AbstractFloat = 8
 _get_bit_depth(img::Type{Bool}) = 8
 
-get_color_type{T}(::Type{Gray{T}})  = PNG_COLOR_TYPE_GRAY
-get_color_type{T}(::Type{GrayA{T}}) = PNG_COLOR_TYPE_GRAY_ALPHA
-get_color_type{T}(::Type{RGB{T}})   = PNG_COLOR_TYPE_RGB
-get_color_type{T}(::Type{RGBA{T}})  = PNG_COLOR_TYPE_RGBA
-get_color_type{T<:Normed}(::Type{T}) = PNG_COLOR_TYPE_RGB
+get_color_type(::Type{Gray{T}}) where T   = PNG_COLOR_TYPE_GRAY
+get_color_type(::Type{GrayA{T}}) where T  = PNG_COLOR_TYPE_GRAY_ALPHA
+get_color_type(::Type{RGB{T}}) where T    = PNG_COLOR_TYPE_RGB
+get_color_type(::Type{RGBA{T}}) where T   = PNG_COLOR_TYPE_RGBA
+get_color_type(::Type{T}) where T<:Normed = PNG_COLOR_TYPE_RGB
 
-map_image{T}(c::Gray{T}) = convert(Gray{N0f8}, c)
-map_image{T<:Normed}(c::Gray{T}) = c
-map_image{T}(c::GrayA{T}) = convert(GrayA{N0f8}, c)
-map_image{T<:Normed}(c::GrayA{T}) = c
-map_image{T}(c::RGB{T}) = convert(RGB{N0f8}, c)
-map_image{T<:Normed}(c::RGB{T}) = c
-map_image{T}(c::RGBA{T}) = convert(RGBA{N0f8}, c)
-map_image{T<:Normed}(c::RGBA{T}) = c
+map_image(c::Gray{T}) where T = convert(Gray{N0f8}, c)
+map_image(c::Gray{T}) where T<:Normed = c
+map_image(c::GrayA{T}) where T = convert(GrayA{N0f8}, c)
+map_image(c::GrayA{T}) where T<:Normed = c
+map_image(c::RGB{T}) where T = convert(RGB{N0f8}, c)
+map_image(c::RGB{T}) where T<:Normed = c
+map_image(c::RGBA{T}) where T = convert(RGBA{N0f8}, c)
+map_image(c::RGBA{T}) where T<:Normed = c
 
 map_image(x::Bool) = convert(Gray{N0f8}, x)
 map_image(x::AbstractFloat) = convert(N0f8, x)
 map_image(x::Normed) = x
 
-get_image_size{T}(buffer::AbstractArray{T,2}) = size(buffer)
-get_image_size{T,N}(buffer::AbstractArray{T,N}) = error("Number of dimensions in image of $ndims not supported.")
-function get_image_size{T}(buffer::AbstractArray{T,3})
+get_image_size(buffer::AbstractArray{T,2}) where T = size(buffer)
+get_image_size(buffer::AbstractArray{T,N}) where {T, N} = error("Number of dimensions in image of $ndims not supported.")
+function get_image_size(buffer::AbstractArray{T,3}) where T
     n_channels, height, width = size(buffer)
     height, width
 end
 
-function writeimage{T}(filename::String, image::AbstractArray{T})
+function writeimage(filename::String, image::AbstractArray{T}) where T
 
-    fp = ccall((:fopen, "libc"), Ptr{Void}, (Cstring, Cstring), filename, "wb")
+    fp = ccall(:fopen, Ptr{Cvoid}, (Cstring, Cstring), filename, "wb")
     fp == C_NULL && error("Could not open $(filename) for writing")
 
     png_ptr = png_create_write_struct(png_error_fn, png_warn_fn)
@@ -143,7 +145,6 @@ function writeimage{T}(filename::String, image::AbstractArray{T})
     png_init_io(png_ptr, fp)
 
     image = map(map_image, image)
-
     buffer = to_raw(image)
 
     height, width = get_image_size(buffer)
@@ -163,8 +164,8 @@ function writeimage{T}(filename::String, image::AbstractArray{T})
             compression_type=$compression_type,
             filter_type=$filter_type"
 
-    ccall((:png_set_IHDR, libpng), Void,
-          (Ptr{Void}, Ptr{Void}, Cuint, Cuint, Cint, Cint, Cint, Cint, Cint),
+    ccall((:png_set_IHDR, libpng), Cvoid,
+          (Ptr{Cvoid}, Ptr{Cvoid}, Cuint, Cuint, Cint, Cint, Cint, Cint, Cint),
           png_ptr, info_ptr, width, height, bit_depth, color_type, interlace,
           compression_type, filter_type)
 
@@ -180,25 +181,25 @@ function writeimage{T}(filename::String, image::AbstractArray{T})
 end
 
 # 2 dim matrix
-function write_rows{T}(buf::AbstractArray{T, 2}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+function write_rows(buf::AbstractArray{T, 2}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where T
     height, width = get_image_size(buf)
     for row = 1:height
         row_buf = buf[row, :]
-        ccall((:png_write_row, libpng), Void, (Ptr{Void}, Ptr{T}), png_ptr, row_buf)
+        ccall((:png_write_row, libpng), Cvoid, (Ptr{Cvoid}, Ptr{T}), png_ptr, row_buf)
     end
-    ccall((:png_write_end, libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    ccall((:png_write_end, libpng), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
 end
 
 # 3-dim matrix
-function write_rows{T}(buf::AbstractArray{T, 3}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+function write_rows(buf::AbstractArray{T, 3}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where T
     height, width = get_image_size(buf)
     for row = 1:height
         row_buf = buf[:, row, :]
-        ccall((:png_write_row, libpng), Void, (Ptr{Void}, Ptr{T}), png_ptr, row_buf)
+        ccall((:png_write_row, libpng), Cvoid, (Ptr{Cvoid}, Ptr{T}), png_ptr, row_buf)
     end
-    ccall((:png_write_end, libpng), Void, (Ptr{Void}, Ptr{Void}), png_ptr, info_ptr)
+    ccall((:png_write_end, libpng), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), png_ptr, info_ptr)
 end
 
-function write_rows{T, N}(buf::AbstractArray{T, N}, png_ptr::Ptr{Void}, info_ptr::Ptr{Void})
+function write_rows(buf::AbstractArray{T, N}, png_ptr::Ptr{Cvoid}, info_ptr::Ptr{Cvoid}) where {T, N}
     error("Image has invalid dimension $N")
 end

@@ -1,0 +1,24 @@
+name = "LibPNG"
+uuid = "302e2f8f-8d6e-5b9d-87b0-6c7ef3dd6509"
+authors = ["Josh Christie <joshua.m.christie@gmail.com>", "Mandeep Bahal <mandeep.bahal@roames.com.au>"]
+version = "0.1.0"
+
+[deps]
+BinDeps = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
+BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+CMakeWrapper = "d5fb7624-851a-54ee-a528-d3f3bac0b4a0"
+ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
+FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
+ImageCore = "a09fc81d-aa75-5fe9-8630-4744c3626534"
+Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[compat]
+julia = "0.7, 1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
