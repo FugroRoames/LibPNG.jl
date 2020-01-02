@@ -1,5 +1,3 @@
-__precompile__()
-
 module LibPNG
 
 using ColorTypes,
@@ -8,12 +6,14 @@ using ColorTypes,
 
 export readimage, writeimage
 
-const depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
-if isfile(depsfile)
-    include(depsfile)
-    check_deps()
+if VERSION < v"1.3"
+    const depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
+    if isfile(depsfile)
+        include(depsfile)
+        check_deps()
+    end
 else
-    error("LibPNG not properly installed. Please run Pkg.build(\"LibPNG\") then restart Julia.")
+    using libpng_jll
 end
 
 include("functions.jl")
